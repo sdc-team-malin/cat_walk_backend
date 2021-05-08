@@ -18,20 +18,55 @@ const pool = new Pool({
   password: "Clooney1!",
   port: 5432
 });
+
+var outputObj = {}
+var photosArr = []
+var resultsArr = []
+var totalOutput = {}
+function pretty(arr){
+arr.forEach((el)=>{
+    outputObj.rating = el.rating
+    outputObj.summary = el.summary
+    outputObj.response = el.response
+          outputObj.body = el.body
+           outputObj.date = el.date
+        outputObj.reviewer_name = el.reviewer_name
+    outputObj.helpfulness = el.helpfulness
+            outputObj.response = el.response
+            outputObj.review_id = el.review_id
+
+    var url = el.url
+    var id = el.id
+   photosArr.push({url, id})
+  outputObj.photos = photosArr
+})
+
+resultsArr.push(outputObj)
+totalOutput.page = 1
+totalOutput.count = 5
+totalOutput.results = resultsArr
+return totalOutput
+}
+
+
 const getProductById = (req, res) => {
 
   var prodObj = {}
   var prodId = req.query.product_id
-  pool.query(`SELECT * FROM reviews WHERE id = ${prodId}`, (error, results) => {
+
+  pool.query(`SELECT reviews.rating, reviews.summary, reviews.response, reviews.body, reviews.date, reviews.reviewer_name, reviews.helpfulness, photos.review_id, photos.id, photos.url FROM reviews INNER JOIN photos ON reviews.id = ${prodId} AND photos.review_id = ${prodId};`, (error, results) => {
     if (error) {
       throw error
     }
+    var products = pretty(results.rows)
 
 
-   prodObj['results'] = results.rows
+res.status(200).send(products)
+  //  prodObj['results'] = results.rows
 
-   console.log(prodObj)
+  //  console.log(prodObj)
   })
+
 }
 
 app.get('/reviews', getProductById)
