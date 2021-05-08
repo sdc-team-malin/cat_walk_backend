@@ -1,0 +1,14 @@
+LOAD CSV
+FROM 'csv/clean_characeristics.csv' (
+  id,
+  product_id,
+  name
+)
+INTO postgresql:///sdc_api?characteristics (
+  id,
+  product_id,
+  name
+)
+
+WITH
+fields terminated by ',';

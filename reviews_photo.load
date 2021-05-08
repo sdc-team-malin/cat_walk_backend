@@ -1,0 +1,15 @@
+LOAD CSV
+
+FROM 'csv/reviews_photos.csv' (
+  id,
+  review_id,
+  url
+)
+INTO postgresql:///sdc_api?photos (
+  id,
+  review_id,
+  url
+)
+
+WITH
+fields terminated by ',';
