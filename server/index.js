@@ -18,7 +18,7 @@ const pool = new Pool({
   password: "Clooney1!",
   port: 5432
 });
-//////////////////////////////////////
+///////////////GET REVIEWS///////////////////////
 var outputObj = {}
 var photosArr = []
 var resultsArr = []
@@ -62,16 +62,14 @@ const getProductById = (req, res) => {
 
 
 res.status(200).send(products)
-  //  prodObj['results'] = results.rows
 
-  //  console.log(prodObj)
   })
 
 }
 app.get('/reviews', getProductById)
-////////////////////////////////
 
 
+//////////////REVIEWS META//////////////////
 var output = {}
 var valOutput = {}
 var outputMeta = {}
@@ -150,10 +148,10 @@ allTheChars.Comfort = {value: averageChar(comfort)}
 
 }
 
-for(var i = 0; i < arr.length; i++){
+// for(var i = 0; i < arr.length; i++){
 
- //  console.log(allTheChars)
-}
+//  //  console.log(allTheChars)
+// }
 
 
 for(var key in output){
@@ -183,7 +181,6 @@ const getMetaData = (req, res) => {
 
 var prodId = req.query.product_id
 
-// `SELECT reviews.id, reviews.product_id, reviews.rating, reviews.recommend, characteristics.id AS charID, characteristics.product_id AS charPId, characteristics.name, char_reviews.characteristic_id, char_reviews.review_id, char_reviews.value FROM reviews INNER JOIN characteristics ON reviews.product_id = ${prodId} AND characteristics.product_id = ${prodId} INNER JOIN char_reviews ON characteristics.id = char_reviews.characteristic_id`
   pool.query(`SELECT reviews.id, reviews.product_id, reviews.rating, reviews.recommend, characteristics.id AS charID, characteristics.product_id AS charPId, characteristics.name, char_reviews.id AS charrevid, char_reviews.characteristic_id, char_reviews.review_id, char_reviews.value FROM reviews INNER JOIN characteristics ON reviews.product_id = ${prodId} AND characteristics.product_id = ${prodId} INNER JOIN char_reviews ON characteristics.id = char_reviews.characteristic_id`, (error, results) => {
     if (error) {
       throw error
@@ -196,8 +193,9 @@ var prodId = req.query.product_id
 
  }
 app.get('/reviews/meta', getMetaData)
-////////////////////////////////
 
+
+//////////////ADD HELPFUL//////////////////
 const addHelpful = (req, res) => {
 
   console.log(req.query, req.params)
@@ -207,13 +205,12 @@ const addHelpful = (req, res) => {
       throw error
     }
     res.status(200).send(`Review modified with ID: ${req.params.review_id}`)
-
 })
-
 }
-
 app.put('/reviews/:review_id/helpful', addHelpful)
-///////////////////////////////////
+
+
+////////////////CHANGE REPORTED///////////////////
 const changeReported = (req, res) => {
 
   console.log(req.query, req.params)
@@ -229,118 +226,40 @@ const changeReported = (req, res) => {
 }
 app.put('/reviews/:review_id/report', changeReported)
 
-//////////////////////////////////////////////////////////
-const postReview = (req, res) => {
+/////////////////////POST REVIEWS/////////////////////////////////////
+async function postReview(req, res){
   const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = req.query
-  var rID;
-  // const { product_id, rating, summary, body, recommend, name, email } = req.query
-  // var k = Object.keys(JSON.parse(characteristics))
-  // var v = Object.values(JSON.parse(characteristics))
-  // console.log(v)
-  // for(var i = 0; i < k.length; i++){
-  //   console.log(k[i], v[i])
-  // }
-  const query = "INSERT INTO reviews (product_id, rating, summary, body, recommend, reviewer_name, reviewer_email) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING reviews.id"
-  //const query2 = "INSERT INTO photos (review_id, url) VALUES ($1, $2)"
-pool.connect((err, client, done) =>{
-  if (err) throw err;
 
-  client.query(query, [product_id, rating, summary, body, recommend, name, email], (err, res)=>{
-  if(err){
-    console.log(err.stack)
+  var k = Object.keys(JSON.parse(characteristics))
+  var v = Object.values(JSON.parse(characteristics))
+
+let response;
+let response2;
+try {
+  response = await pool.query(`INSERT INTO reviews (product_id, rating, summary, body, recommend, reviewer_name, reviewer_email) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING reviews.id`, [product_id, rating, summary, body, recommend, name, email])
+} catch (error) {
+  throw error
+}
+try {
+  response2 = await pool.query(`INSERT INTO photos (review_id, url) VALUES ($1, $2) RETURNING photos.review_id`, [response.rows[0].id, photos])
+} catch (error) {
+  throw error
+}
+
+try {
+  for(var i = 0; i < k.length; i++){
+
+    response = await pool.query(`INSERT INTO char_reviews (review_id, characteristic_id, value) VALUES ($1, $2, $3)`, [response2.rows[0].review_id, k[i], v[i]])
   }
-  console.log(res.rows[0].id)
-  })
-  console.log(rID)
-  // client.query(query2, [res.rows[0].id, photos], (err, res)=>{
-  //   if(err){
-  //     console.log(err.stack)
-  //   }
-  //  })
-//  client.query(query2, [res.rows[0].id, photos], (err, res)=>{
-//   if(err){
-//     console.log(err.stack)
-//   }
-//  } )
+  res.status(200).send('saved')
+} catch (error) {
+  throw error
+}
 
 
-})
-  // pool.query(`INSERT INTO reviews (product_id, rating, summary, body, recommend, reviewer_name, reviewer_email) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING reviews.id`, [product_id, rating, summary, body, recommend, name, email], (error, results) => {
-  //   if(error) {
-  //     throw error
-  //   }
-  //   pool.query(`INSERT INTO photos (review_id, url) VALUES ($1, $2)`, [results.rows[0].id, photos], (error, results) => {
-  //     if(error) {
-  //       throw error
-  //     }
-
-  //   })
-
- // })
 }
 
 app.post('/reviews', postReview)
-
-// const pool = new Pool({
-//   host: "localhost",
-//   user: "me",
-//   database: "sdc_api",
-//   password: "Clooney1!",
-//   port: 5432
-// });
-// const getPhotostById = (req, res) => {
-//   // var prodObj = {}
-//   // var prodId = req.query.product_id
-//   pool.query(`SELECT * FROM photos WHERE id = 2742539;`, (error, results) => {
-//     if (error) {
-//       throw error
-//     }
-
-// console.log(results.rows)
-//   })
-// }
-
-// app.get('/photos', getPhotostById)
-
-// const getCharsById = (req, res) => {
-//   // var prodObj = {}
-//   // var prodId = req.query.product_id
-//   pool.query(`SELECT * FROM characteristics WHERE id = 99;`, (error, results) => {
-//     if (error) {
-//       throw error
-//     }
-
-// console.log(results.rows)
-//   })
-// }
-
-// const postReview = (req, res) => {
-
-//   // var prodObj = {}
-//   // var prodId = req.query.product_id
-// console.log(req.query)
-
-//   pool.query( "INSERT INTO reviews (product_id, rating, summary, body, recommend,reviewer_name, reviewer_email) VALUES ($1, $2, $3, $4, $5, $6, $7)";  pool.connect((err, client, done) => {
-//     if (err) throw err;
-
-//     //try {
-
-//       req.forEach(row => {
-
-//         client.query(query, [row.id, row.product_id, row.rating, row.date, row.summary, row.body, row.recommend, row.reported, row.reviewer_name, row.reviewer_email, row.response, row.helpfulness], (err, res) =>{
-//           if(err) {
-//             console.log(err.stack)
-//           }
-//         })
-
-// // res.status(200).send(products)
-// //    prodObj['results'] = results.rows
-
-// //    console.log(prodObj)
-//   })
-
-// }
-// app.post('/reviews', postReview)
 
 app.listen(port, function() {
   console.log(`listening on port ${port}`);
