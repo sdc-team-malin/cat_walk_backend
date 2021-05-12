@@ -3,7 +3,7 @@ const bodyParser = require('body-parser')
 const app = express()
 const port = 5000
 const Pool = require('pg').Pool
-require('newrelic')
+
 
 app.use(bodyParser.json())
 app.use(
@@ -19,6 +19,10 @@ const pool = new Pool({
   password: "Clooney1!",
   port: 5432
 });
+
+app.get('/test', (req, res) => {
+  res.status(200).send('hey')
+})
 ///////////////GET REVIEWS///////////////////////
 var outputObj = {}
 var photosArr = []
