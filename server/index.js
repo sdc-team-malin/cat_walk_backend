@@ -4,6 +4,7 @@ const app = express()
 const port = 5000
 const Pool = require('pg').Pool
 
+
 app.use(bodyParser.json())
 app.use(
   bodyParser.urlencoded({
@@ -18,6 +19,10 @@ const pool = new Pool({
   password: "Clooney1!",
   port: 5432
 });
+
+app.get('/test', (req, res) => {
+  res.status(200).send('hey')
+})
 ///////////////GET REVIEWS///////////////////////
 var outputObj = {}
 var photosArr = []
@@ -51,7 +56,7 @@ return totalOutput
 
 const getProductById = (req, res) => {
 
-  var prodObj = {}
+
   var prodId = req.query.product_id
 
   pool.query(`SELECT reviews.rating, reviews.summary, reviews.response, reviews.body, reviews.date, reviews.reviewer_name, reviews.helpfulness, photos.review_id, photos.id, photos.url FROM reviews INNER JOIN photos ON reviews.id = ${prodId} AND photos.review_id = ${prodId};`, (error, results) => {
@@ -181,6 +186,7 @@ const getMetaData = (req, res) => {
 
 var prodId = req.query.product_id
 
+
   pool.query(`SELECT reviews.id, reviews.product_id, reviews.rating, reviews.recommend, characteristics.id AS charID, characteristics.product_id AS charPId, characteristics.name, char_reviews.id AS charrevid, char_reviews.characteristic_id, char_reviews.review_id, char_reviews.value FROM reviews INNER JOIN characteristics ON reviews.product_id = ${prodId} AND characteristics.product_id = ${prodId} INNER JOIN char_reviews ON characteristics.id = char_reviews.characteristic_id`, (error, results) => {
     if (error) {
       throw error
@@ -198,30 +204,30 @@ app.get('/reviews/meta', getMetaData)
 //////////////ADD HELPFUL//////////////////
 const addHelpful = (req, res) => {
 
-  console.log(req.query, req.params)
+  // console.log(Number(req.query.helpfulness), req.params.review_id)
 
-  pool.query(`UPDATE reviews SET helpfulness = ${req.query.helpfulness} WHERE id = ${req.params.review_id}`, (error, results) => {
+  pool.query(`UPDATE reviews SET helpfulness = ${Number(req.query.helpfulness)} WHERE id = ${req.params.review_id}`, (error, results) => {
     if (error) {
       throw error
     }
-    res.status(200).send(`Review modified with ID: ${req.params.review_id}`)
-})
+   res.status(200).send(`Review modified with ID: ${req.params.review_id}`)
+ })
 }
 app.put('/reviews/:review_id/helpful', addHelpful)
 
 
 ////////////////CHANGE REPORTED///////////////////
-const changeReported = (req, res) => {
+async function changeReported (req, res){
+var reportId = req.query.reported
+var paramId = req.params.review_id
+try{
 
-  console.log(req.query, req.params)
+  await pool.query(`UPDATE reviews SET reported = ${reportId} WHERE id = ${paramId}`)
 
-  pool.query(`UPDATE reviews SET reported = ${req.query.reported} WHERE id = ${req.params.review_id}`, (error, results) => {
-    if (error) {
-      throw error
-    }
-    res.status(200).send(`Reported modified with ID: ${req.params.review_id}`)
-
-})
+} catch (error) {
+  throw error
+}
+res.sendStatus(200)
 
 }
 app.put('/reviews/:review_id/report', changeReported)
@@ -229,7 +235,6 @@ app.put('/reviews/:review_id/report', changeReported)
 /////////////////////POST REVIEWS/////////////////////////////////////
 async function postReview(req, res){
   const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = req.query
-
   var k = Object.keys(JSON.parse(characteristics))
   var v = Object.values(JSON.parse(characteristics))
 
