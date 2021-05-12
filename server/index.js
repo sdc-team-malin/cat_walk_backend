@@ -3,6 +3,7 @@ const bodyParser = require('body-parser')
 const app = express()
 const port = 5000
 const Pool = require('pg').Pool
+require('newrelic')
 
 app.use(bodyParser.json())
 app.use(
